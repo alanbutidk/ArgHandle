@@ -1,0 +1,13 @@
+dist/
+build/
+*.egg-info/
+*.build/
+*.dist/
+*.onefile-build/
+__pycache__/
+*.pyc
+venv/
+.env/
+env/
+.pypirc
+

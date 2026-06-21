@@ -1,0 +1,5 @@
+exclude .gitignore
+exclude .git
+exclude .abuild
+exclude .autobuild.py
+prune .git

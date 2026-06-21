@@ -1,0 +1,23 @@
+get OS
+
+if OS==nt then
+  let PYNAME = python
+  let RM = del /f
+elif OS==linux then
+  let PYNAME = python3
+  let RM = rm -rf
+else
+  let PYNAME = python3
+  let RM = rm -rf
+done
+
+recipe clean
+recipe full
+let PROGRAM = argparse
+
+clean:
+  shell (RM) (PROGRAM)-* (PROGRAM).egg-info dist build
+full:
+  (PYNAME) -m build
+  (PYNAME) -m twine upload dist\*
+
