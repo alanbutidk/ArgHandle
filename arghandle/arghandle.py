@@ -104,7 +104,8 @@ class ArgHandle:
             "HelpMsg": HelpMsg
         }
         return Registered()
-
+    def RegisterToHelp(self, *args, **kwargs):
+        raise DeprecationWarning("RegisterToHelp is now deprecated, use RegisterArg() instead [CHANGED FROM v1.1.0]")
     def HandleHelp(self, Exit=True):
         if not any(arg in self.args for arg in ["--help", "-h"]):
             return
