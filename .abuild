@@ -22,5 +22,5 @@ clean:
   shell (RM) (PROGRAM)-* (PROGRAM).egg-info (OS_DIST) build
 full:
   (PYNAME) -m build
-  (PYNAME) -m twine upload $(OS_DIST)
+  (PYNAME) -m twine upload (OS_DIST)*
 
