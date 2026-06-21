@@ -3,21 +3,24 @@ get OS
 if OS==nt then
   let PYNAME = python
   let RM = del /f
+  let OS_DIST = dist\\
 elif OS==linux then
   let PYNAME = python3
   let RM = rm -rf
-else
+  let OS_DIST = dist/
+else then
   let PYNAME = python3
   let RM = rm -rf
+  let OS_DIST = dist/
 done
 
 recipe clean
 recipe full
-let PROGRAM = argparse
+let PROGRAM = arghandle
 
 clean:
-  shell (RM) (PROGRAM)-* (PROGRAM).egg-info dist build
+  shell (RM) (PROGRAM)-* (PROGRAM).egg-info (OS_DIST) build
 full:
   (PYNAME) -m build
-  (PYNAME) -m twine upload dist\*
+  (PYNAME) -m twine upload $(OS_DIST)
 
