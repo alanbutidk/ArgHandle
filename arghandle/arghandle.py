@@ -1,3 +1,7 @@
+"""ArgHandle is a library made to simplify using arguments.
+Read tutorial at end of APIs
+"""
+
 import sys
 from typing import Union
 
@@ -127,3 +131,43 @@ class ArgHandle:
             return sys.argv[Index]
         return IndexOutOfRange()
 # End of ArgHandle
+
+"""Tutorial on arghandle:
+ArgHandle is a library made to simplify using sys.argv[]
+This is a tutorial on how to use it...
+
+So for example if our function, test() takes 2 variables. x and y...
+We can directly take them from the sys.argv. So heres how to do it.
+
+!THIS PART ENDS HERE, AFTER THE FUNCTION IS WHEN THE CODE STARTS!"""
+def test(x: int, y: bool) -> tuple | bool:
+    if x == 1 and y:
+        return True
+    elif x == 1 and not y:
+        return False
+    else:
+        return False
+    print("Hey! This function, test() ran because you directly called python on me (with the --test/-t flag)...")
+
+"""Now, our function is ready, so we shall use it...
+It takes a integer, then a boolean. If the int is 1 and y is True.
+Then it returns True
+if x is 1 but y is False, it returns False. else False as well....
+So we start our handler..."""
+if __name__ == "__main__":
+    cli = ArgHandle()
+    cli.RegisterArg(["--test", "-t"], HelpMsg="Runs the test() function")
+    if cli.IsArgInActualArgs("--help") or cli.IsArgInActualArgs("-h"):
+        cli.HandleHelp()
+    if cli.IsArgInActualArgs("--test") or cli.IsArgInActualArgs("-t"):
+        test()
+"""Now, we instantiated the class like: cli = ArgHandle().
+BUT, Now which functions do we get as not instantiated ones.
+
+We get these ones: SetVariableToIndex(), ArgCount(), PrintOnNoArgs().
+
+The order of using the functions are simple, you instantiate a variable,
+Register a argument using RegisterArg([\"--MyFlag\", \"--MyFlag2\"], and a optional HelpMsg=\"Help Message here\"
+and then you can call functions like IsArgInActualArgs to check if the flags are called.
+and call HandleHelp() if --help/-h is called.
+"""

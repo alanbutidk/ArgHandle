@@ -1,6 +1,6 @@
 get OS
 
-if OS==nt then
+if OS==Windows_NT then
   let PYNAME = python
   let RM = del /f
   let OS_DIST = dist\\
