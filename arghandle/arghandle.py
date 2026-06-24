@@ -5,44 +5,67 @@ Read tutorial at end of APIs
 import sys
 from typing import Union
 
+
 class NotRegistered:
     """Returned when the argument list is empty or invalid."""
+
     pass
+
 
 class Registered:
     """Returned when the argument is successfully registered."""
+
     pass
+
 
 class NoKwargs:
     """Returned when no HelpMsg kwarg is provided."""
+
     pass
+
 
 class OverlimitKwargs:
     """Returned when more than one kwarg is provided."""
+
     pass
+
 
 class StrictIndexBroken:
     """Returned when an arg is not at the required StrictIndex and StrictIndex_ExitOnError=False."""
+
     pass
+
 
 class IndexOutOfRange:
     """Returned when the specific index is out of range from sys.argv."""
+
     pass
+
 
 class NoVarIndex:
     """Returned when VarIndex is out of range from sys.argv."""
+
     pass
+
+
+class ArgNotFound:
+    """Returned when WhereArg cannot find the argument from self.args (sys.argv[1:])"""
+
+    pass
+
+
 # End of Custom Classes
+
 
 # Start of ArgHandle
 class ArgHandle:
     def __init__(self):
-        self.args = sys.argv[1:]
+        self.args = sys.argv[1:]  # list starting after <PROGRAM_SCRIPT_PATH>
         self._ProgramName = "PROGRAM"
         self._ArgsRegistered = {
             "help": {
                 "Flags": ["--help", "-h"],
-                "HelpMsg": "Prints this help message and exit"
+                "HelpMsg": "Prints this help message and exit",
             }
         }
 
@@ -68,7 +91,13 @@ class ArgHandle:
     def IsArgInActualArgs(self, String: str) -> bool:
         return String in self.args
 
-    def RegisterArg(self, Flags: list, StrictIndex: int = None, StrictIndex_ExitOnError: bool = False, **kwargs) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken]:
+    def RegisterArg(
+        self,
+        Flags: list,
+        StrictIndex: int = None,
+        StrictIndex_ExitOnError: bool = False,
+        **kwargs,
+    ) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken]:
         """Registers an argument to the help screen and optionally enforces a strict index.
 
         Usage:
@@ -92,10 +121,7 @@ class ArgHandle:
             return OverlimitKwargs()
 
         if StrictIndex is not None:
-            matched = any(
-                self.IsArgMatch(flag, StrictIndex - 1)
-                for flag in Flags
-            )
+            matched = any(self.IsArgMatch(flag, StrictIndex - 1) for flag in Flags)
             if not matched and any(self.IsArgInActualArgs(flag) for flag in Flags):
                 if StrictIndex_ExitOnError:
                     flag_str = ", ".join(Flags)
@@ -105,14 +131,13 @@ class ArgHandle:
 
         _, HelpMsg = next(iter(kwargs.items()))
         Name = Flags[0].lstrip("-")
-        self._ArgsRegistered[Name] = {
-            "Flags": Flags,
-            "HelpMsg": HelpMsg
-        }
+        self._ArgsRegistered[Name] = {"Flags": Flags, "HelpMsg": HelpMsg}
         return Registered()
 
     def RegisterToHelp(self, *args, **kwargs):
-        raise DeprecationWarning("RegisterToHelp is now deprecated, use RegisterArg() instead [CHANGED FROM v1.1.0]")
+        raise DeprecationWarning(
+            "RegisterToHelp is now deprecated, use RegisterArg() instead [CHANGED FROM v1.1.0]"
+        )
 
     def HandleHelp(self, Exit=True):
         if not any(arg in self.args for arg in ["--help", "-h"]):
@@ -135,14 +160,25 @@ class ArgHandle:
         if Index < len(sys.argv):
             return sys.argv[Index]
         return IndexOutOfRange()
+
+    def WhereArg(self, Arg: str) -> str | Union[int, ArgNotFound]:
+        for i in range(len(self.args)):
+            if Arg in self.args[i]:
+                return i
+        return
+
+
 # End of ArgHandle
+
 
 # Start of Experimental
 class Experimental:
     def __init__(self):
         self.args = sys.argv[1:]
 
-    def RegisterArg(self, Flags: list, VarIndex: int, **kwargs) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs]:
+    def RegisterArg(
+        self, Flags: list, VarIndex: int, **kwargs
+    ) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs]:
         """Experimental RegisterArg with setattr variable injection.
 
         Usage:
@@ -171,6 +207,8 @@ class Experimental:
                 setattr(self, VarName, NoVarIndex())
 
         return Registered()
+
+
 # End of Experimental
 
 """Tutorial on arghandle:
@@ -181,31 +219,49 @@ So for example if our function, test() takes 2 variables. x and y...
 We can directly take them from the sys.argv. So heres how to do it.
 
 !THIS PART ENDS HERE, AFTER THE FUNCTION IS WHEN THE CODE STARTS!"""
-def test(x: int, y: bool) -> tuple | bool:
-    if x == 1 and y:
-        print("Hey! This function, test() ran because you directly called python on me (with the --test/-t flag)...")
-        return True
-    elif x == 1 and not y:
-        return False
+
+
+def Main():
+    print("Welcome to arghandle v1.2.4")
+    print("This test is to showcase ArgHandle, and the logic behind this is simple.")
+    Ask: str = str(input("\nShould i talk show a cool thing: "))
+    if Ask.lower() == "yes":
+        pass
+        print("Full screen first if you havent and press any enter.")
+        Enter = input("")
+    elif Ask.lower() == "no":
+        raise SystemExit(":(")
     else:
-        return False
+        raise SystemExit("?????????Error0x1b9493I??????????")
+    # start of cool thing
+    print(""" █████  ██████   ██████  ██   ██  █████  ███    ██ ██████  ██      ███████ 
+██   ██ ██   ██ ██       ██   ██ ██   ██ ████   ██ ██   ██ ██      ██      
+███████ ██████  ██   ███ ███████ ███████ ██ ██  ██ ██   ██ ██      █████   
+██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██      
+██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████ 
+                                                                           
+                                                                           """)
+
+
+# End of cool thing
 
 """Now, our function is ready, so we shall use it...
 It takes a integer, then a boolean. If the int is 1 and y is True.
 Then it returns True
 if x is 1 but y is False, it returns False. else False as well....
 So we start our handler..."""
+
 if __name__ == "__main__":
     cli = ArgHandle()
-    cli.RegisterArg(["--test", "-t"], HelpMsg="Runs the test() function")
+    cli.RegisterArg(["--test", "-t"], HelpMsg="Runs the Main() function")
     cli.HandleHelp()
     if cli.IsArgInActualArgs("--test") or cli.IsArgInActualArgs("-t"):
-        test(1, True)
+        Main()
+
 """Now, we instantiated the class like: cli = ArgHandle().
 BUT, Now which functions do we get as not instantiated ones.
 
-We get these ones: SetVariableToIndex(), ArgCount(), PrintOnNoArgs().
-
+We get these ones: SetVariableToIndex(), ArgCount(), PrintOnNoArgs(
 The order of using the functions are simple, you instantiate a variable,
 Register a argument using RegisterArg(["--MyFlag", "--MyFlag2"], and a optional HelpMsg="Help Message here"
 and then you can call functions like IsArgInActualArgs to check if the flags are called.
