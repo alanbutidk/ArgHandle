@@ -2,4 +2,6 @@ exclude .gitignore
 exclude .git
 exclude .abuild
 exclude .autobuild.py
+exclude .ruff_cache
 prune .git
+prune .ruff_cache

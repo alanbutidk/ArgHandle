@@ -1,11 +1,13 @@
-"""ArgHandle is a library made to simplify using arguments.
-Read tutorial at end of APIs
-"""
+"""ArgHandle is a library made to simplify using arguments with a ALMOST Pure-Python implementation."""
 
 import sys
 from typing import Union
+import warnings
+
+# Read tutorial at end of file.
 
 
+# Start of returnable classes.
 class NotRegistered:
     """Returned when the argument list is empty or invalid."""
 
@@ -54,11 +56,17 @@ class ArgNotFound:
     pass
 
 
-# End of Custom Classes
+class NotFoundInArgs:
+    """Returned when ArgHandle.NextAfter couldnt find the value."""
+
+    pass
 
 
-# Start of ArgHandle
-class ArgHandle:
+# End of returnable Classes
+
+
+# Start of Legacy class (Dont use it!)
+class Legacy:
     def __init__(self):
         self.args = sys.argv[1:]  # list starting after <PROGRAM_SCRIPT_PATH>
         self._ProgramName = "PROGRAM"
@@ -68,6 +76,11 @@ class ArgHandle:
                 "HelpMsg": "Prints this help message and exit",
             }
         }
+        warnings.warn(
+            "The old class 'ArgHandle' or now, Legacy is deprecated. \nPlease switch to the new ArgHandle class, Although you can still use the Legacy class.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
 
     def ProgramName(self, string: str):
         self._ProgramName = string
@@ -168,29 +181,77 @@ class ArgHandle:
         return
 
 
-# End of ArgHandle
+# End of Legacy
 
 
-# Start of Experimental
-class Experimental:
+# Start of ArgHandle (Recommended)
+class ArgHandle:
     def __init__(self):
         self.args = sys.argv[1:]
+        self._ProgramName = "PROGRAM"
+        self._ArgsRegistered = {
+            "Help": {
+                "Flags": ["--help", "-h"],
+                "HelpMsg": "Print this help message and exit.",
+            }
+        }
+
+    def ProgramName(self, String: str):
+        self._ProgramName = String
+
+    @staticmethod
+    def ArgCount() -> int:
+        return len(sys.argv)
+
+    @staticmethod
+    def PrintOnNoArgs(String: str, Exit=False):
+        if len(sys.argv) < 2:
+            if Exit:
+                raise SystemExit(f"{String}\n")
+            print(f"{String}\n")
+
+    def SetVariableToIndex(
+        self, VarName: str, Index: int
+    ) -> Union[str, IndexOutOfRange]:
+        """Sets a variable to a specific index.
+        Usage: Output = ArgHandle.SetVariableToIndex(\"YourVariableName\", 2), 2 is the index.
+        If sys.argv[2] holds "myfile.c" then it will return myfile.c
+        else it will return IndexOutOfRange"""
+
+        if Index < len(sys.argv):
+            setattr(self, VarName, sys.argv[Index])
+            return sys.argv[Index]
+        setattr(self, VarName, IndexOutOfRange())
+        return IndexOutOfRange()
+
+    def IsArgMatch(self, String: str, AtIndex: int) -> bool:
+        if AtIndex < len(self.args):
+            return self.args[AtIndex] == String
+        return False
+
+    def IsArgInActualArgs(self, String: str) -> bool:
+        return String in self.args
 
     def RegisterArg(
-        self, Flags: list, VarIndex: int, **kwargs
-    ) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs]:
-        """Experimental RegisterArg with setattr variable injection.
+        self,
+        Flags: list,
+        StrictIndex: int = None,
+        StrictIndex_ExitOnError: bool = False,
+        VarIndex: int = None,
+        **kwargs,
+    ) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken]:
+        """RegisterArg with setattr variable injection.
 
         Usage:
-            cli = Experimental()
-            cli.RegisterArg(["--output", "-o"], VarIndex=2, HelpMsg="Output file")
+            cli = ArgHandle()
+            cli.RegisterArg(["--output", "-o"], StrictIndex=2, StrictIndex_ExitOnError=True, HelpMsg="Output file")
             print(cli.output)
 
         kwargs:
             HelpMsg="Description shown in help"
 
         Returns:
-            Registered, NotRegistered, NoKwargs, OverlimitKwargs
+            Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken
         """
         if not Flags or Flags == []:
             return NotRegistered()
@@ -199,17 +260,71 @@ class Experimental:
         if len(kwargs) > 1:
             return OverlimitKwargs()
 
+        if StrictIndex is not None:
+            Matched = any(
+                StrictIndex - 1 < len(self.args) and self.args[StrictIndex - 1] == Flag
+                for Flag in Flags
+            )
+            if not Matched and any(Flag in self.args for Flag in Flags):
+                if StrictIndex_ExitOnError:
+                    FlagStr = ", ".join(Flags)
+                    raise SystemExit(f"[{FlagStr}] is not at index [{StrictIndex}]\n")
+                else:
+                    return StrictIndexBroken()
+
         if VarIndex is not None:
             VarName = Flags[0].lstrip("-").replace("-", "_")
             if VarIndex < len(sys.argv):
                 setattr(self, VarName, sys.argv[VarIndex])
             else:
                 setattr(self, VarName, NoVarIndex())
+            self._ArgsRegistered[VarName] = {
+                "Flags": Flags,
+                "HelpMsg": next(iter(kwargs.values())),
+                "VarIndex": VarIndex,
+            }
 
+        _, HelpMsg = next(iter(kwargs.items()))
+        Name = Flags[0].lstrip("-")
+        self._ArgsRegistered[Name] = {"Flags": Flags, "HelpMsg": HelpMsg}
         return Registered()
 
+    def RegisterToHelp(self, *Args, **Kwargs):
+        warnings.warn(
+            "RegisterToHelp is now deprecated, use RegisterArg() instead [CHANGED FROM v1.1.0]",
+            category=DeprecationWarning,
+        )
 
-# End of Experimental
+    def HandleHelp(self, Exit=True):
+        if not any(Arg in self.args for Arg in ["--help", "-h"]):
+            return
+        print(f"{self._ProgramName} --help/-h called:")
+        for Name, Info in self._ArgsRegistered.items():
+            Flags = ", ".join(Info["Flags"])
+            Msg = Info["HelpMsg"]
+            print(f"  [{Flags}]: {Msg}")
+        if Exit:
+            raise SystemExit()
+
+    def WhereArg(self, Arg: str) -> Union[int, ArgNotFound]:
+        for i in range(len(self.args)):
+            if Arg in self.args[i]:
+                return i
+        return ArgNotFound()
+
+    def NextAfter(self, InitVar) -> Union[str, NotFoundInArgs]:
+        if isinstance(InitVar, (NoVarIndex, NotFoundInArgs)):
+            return NotFoundInArgs()
+        for Name, Info in self._ArgsRegistered.items():
+            if Info.get("VarIndex") is not None and getattr(self, Name, None):
+                NextIdx = Info["VarIndex"] + 1
+                if NextIdx < len(sys.argv):
+                    return sys.argv[NextIdx]
+                return NotFoundInArgs()
+        return NotFoundInArgs()
+
+
+# End of Experimental (Or ArgHandle)
 
 """Tutorial on arghandle:
 ArgHandle is a library made to simplify using sys.argv[]
@@ -222,25 +337,13 @@ We can directly take them from the sys.argv. So heres how to do it.
 
 
 def Main():
-    print("Welcome to arghandle v1.2.4")
     print("This test is to showcase ArgHandle, and the logic behind this is simple.")
-    Ask: str = str(input("\nShould i talk show a cool thing: "))
-    if Ask.lower() == "yes":
-        pass
-        print("Full screen first if you havent and press any enter.")
-        Enter = input("")
-    elif Ask.lower() == "no":
-        raise SystemExit(":(")
-    else:
-        raise SystemExit("?????????Error0x1b9493I??????????")
-    # start of cool thing
-    print(""" █████  ██████   ██████  ██   ██  █████  ███    ██ ██████  ██      ███████ 
+    print("""\033[34m █████  ██████   ██████  ██   ██  █████  ███    ██ ██████  ██      ███████ 
 ██   ██ ██   ██ ██       ██   ██ ██   ██ ████   ██ ██   ██ ██      ██      
 ███████ ██████  ██   ███ ███████ ███████ ██ ██  ██ ██   ██ ██      █████   
 ██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██      
-██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████ 
-                                                                           
-                                                                           """)
+██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████                                                           
+\033[0mv1.3.2                    """)
 
 
 # End of cool thing
@@ -252,11 +355,19 @@ if x is 1 but y is False, it returns False. else False as well....
 So we start our handler..."""
 
 if __name__ == "__main__":
+    import subprocess
+
+    subprocess.run(
+        "", shell=True
+    )  # This enables color code support (or colors the terminal.)
     cli = ArgHandle()
     cli.RegisterArg(["--test", "-t"], HelpMsg="Runs the Main() function")
+    cli.RegisterArg(["--version", "-v"], HelpMsg="Prints version and exits")
     cli.HandleHelp()
     if cli.IsArgInActualArgs("--test") or cli.IsArgInActualArgs("-t"):
         Main()
+    if cli.IsArgInActualArgs("--version") or cli.IsArgInActualArgs("-v"):
+        print("ArgHandle v1.3.2")
 
 """Now, we instantiated the class like: cli = ArgHandle().
 BUT, Now which functions do we get as not instantiated ones.
@@ -267,10 +378,10 @@ Register a argument using RegisterArg(["--MyFlag", "--MyFlag2"], and a optional 
 and then you can call functions like IsArgInActualArgs to check if the flags are called.
 and call HandleHelp() if --help/-h is called.
 
-Experimental usage:
-    exp = Experimental()
-    exp.RegisterArg(["--output", "-o"], VarIndex=2, HelpMsg="Output file")
-    if isinstance(exp.output, NoVarIndex):
+ArgHandle usage:
+    cli = ArgHandle()
+    cli.RegisterArg(["--output", "-o"], StrictIndex=2, StrictIndex_ExitOnError=True, HelpMsg="Output file")
+    if isinstance(cli.output, NoVarIndex):
         raise SystemExit("No output file provided\n")
-    print(exp.output)
+    print(cli.output)
 """

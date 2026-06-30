@@ -6,7 +6,8 @@ from .arghandle import (
     OverlimitKwargs,
     StrictIndexBroken,
     IndexOutOfRange,
-    Experimental,
+    Legacy,
     NoVarIndex,
     ArgNotFound,
+    NotFoundInArgs,
 )
