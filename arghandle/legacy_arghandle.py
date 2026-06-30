@@ -63,7 +63,6 @@ class NotFoundInArgs:
 # End of returnable Classes
 
 
-
 # Start of Legacy class (Dont use it!)
 class Legacy:
     def __init__(self):
@@ -177,7 +176,7 @@ class Legacy:
         for i in range(len(self.args)):
             if Arg in self.args[i]:
                 return i
-        return
+        return ArgNotFound()
 
 
 # End of Legacy

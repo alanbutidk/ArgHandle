@@ -45,5 +45,4 @@ verboseupload:
 verbosefull:
   (PYNAME) -m build
   (PYNAME) -m twine upload (OS_DIST)* --verbose
-  shell (CLS)
   echo "Finished!"

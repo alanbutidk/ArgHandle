@@ -228,7 +228,7 @@ def Main():
 ███████ ██████  ██   ███ ███████ ███████ ██ ██  ██ ██   ██ ██      █████   
 ██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██      
 ██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████                                                           
-\033[0mv1.3.2                    """)
+\033[0mv1.3.3                    """)
 
 
 # End of cool thing
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         Main()
         raise SystemExit  # Again so we cant pass after this
     if cli.IsArgInActualArgs("--version") or cli.IsArgInActualArgs("-v"):
-        print("ArgHandle v1.3.2")
+        print("ArgHandle v1.3.3")
         raise SystemExit  # So we cant pass after this.
 
 """Now, we instantiated the class like: cli = ArgHandle().
