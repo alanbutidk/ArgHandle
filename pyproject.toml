@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arghandle"
-version = "1.3.3"
+version = "2.1.0"
 description = "A simple, clean alternative to argparse"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -20,4 +20,4 @@ classifiers = [
 ]
 [project.scripts]
 
-arghandle = "arghandle.arghandle:Main"
+arghandle = "arghandle.arghandle:Cli"

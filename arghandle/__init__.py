@@ -12,8 +12,11 @@ from .arghandle import (
 )
 from .legacy_arghandle import Legacy
 
+from .oindex_arghandle import OIndexArgHandle
+
 __all__ = [
     "ArgHandle",
+    "OIndexArgHandle"
     "NotRegistered",
     "Registered",
     "NoKwargs",
