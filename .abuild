@@ -1,3 +1,6 @@
+# You need autobuild installed for this :) and this wont work on your PC, dont be excited...
+# This is for me [lol :))))]
+
 get OS
 
 if OS==Windows_NT then
