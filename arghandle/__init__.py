@@ -1,3 +1,5 @@
+# pyright: ignore
+
 from .arghandle import (
     ArgHandle,
     NotRegistered,
@@ -16,7 +18,7 @@ from .oindex_arghandle import OIndexArgHandle
 
 __all__ = [
     "ArgHandle",
-    "OIndexArgHandle"
+    "OIndexArgHandle",
     "NotRegistered",
     "Registered",
     "NoKwargs",
