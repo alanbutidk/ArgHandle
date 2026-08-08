@@ -1,4 +1,4 @@
-# ArgHandle v2.2.2
+# ArgHandle v2.2.3
 
 A simple, lightweight alternative to `argparse`. No confusion, no boilerplate, just clean argument handling for your CLI tools.
 
@@ -7,7 +7,7 @@ Built because `argparse` is overkill for most scripts. ArgHandle gives you exact
 ## Installation
 
 ```
-pip install arghandle==2.2.2
+pip install arghandle==2.2.3
 ```
 
 ## Quick Start

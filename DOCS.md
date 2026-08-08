@@ -1,4 +1,15 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+body, h1, h2, h3, p, ul, *, code, pre, span {
+  font-family: "JetBrains Mono", monospace;
+}
+
+</style>
+
+
 # ArgHandle Documentation
+
 **ArgHandle** is a library written with NO custom-depends except Python StdLib.
 
 It offers great parsing features without the complex commands argparse introduces.
@@ -9,7 +20,15 @@ It is installable via pip with: `pip install arghandle`
 
 This is where the docs actually begin:
 
-The class is called `ArgHandle()`, It holds the following functions:
+The class is called `ArgHandle()`.
+
+The arguments the class takes are:
+
+- ProgramName: str
+- Version: str
+- NoArgsMsg: str (Replaces PrintOnNoArgs with this message)
+
+It holds the following functions:
 
 - ProgramName() :: Use to change program name
 - Version() :: Use to change Version
@@ -21,7 +40,6 @@ Intoduced in v2.1.0, They modify _Version, and _ProgramName (Version and Program
 CustomVersionMsg() changes _CustomVersionMsg in the class.
 
 - @staticmethod: ArgCount() :: Returns a integer the length of sys.argv
-- @staticmethod: PrintOnNoArgs :: Print a message when no arguments are given
 
 Arguments allowed:
 
@@ -70,6 +88,30 @@ It can return:
 
 - HandleBasic() :: Handles --help/-h and --version/-v
 - WhereArg() :: Returns the index of the Arg asked for (Function arg: (str))
+
+- RegisterArgs(ArgDef: list) :: Info below!!
+
+**Used to reduce boilerplate**
+
+It takes the same arguments as RegisterArg but in bulk, example:
+
+
+```python
+cli = ArgHandle("MyTool", "v1.0.0")
+cli.RegisterArgs([
+  {"Flags": ["--test", "-t"], HelpMsg="Test, foo bar"},
+  {"Flags": ["--arg", "-a"], HelpMsg="arg1"},
+])
+```
+
+- Parse(Exit=True) :: Info below!!
+
+**Used to reduce boilerplate**
+
+It takes only Exit (which is not needed by default)
+
+It does HandleBasic()
+and PrintOnNoArgs()
 
 ---
 

@@ -33,20 +33,13 @@ else:
 
 For now, this is ArgHandle, read the docs at the github repository.
 
-
------
-
-WHAT WAS ADDED IN v2.2.2:
-
-- HandleBasic() fixed to check if [--help/-h] || [--version/-v] AT sys.argv[1], NOT IN sys.argv
-- Removed RegisterToHelp(), as it wasn't doing any logic!
-
 """
 
 # Imports:
 import sys
 from typing import Union
-import warnings
+
+# import warnings
 # import os
 # import re
 # import textwrap
@@ -104,16 +97,26 @@ class IndexOutOfRange:
     pass
 
 
-class NoVarIndex:
-    """Returned when VarIndex is out of range from sys.argv."""
-
-    pass
-
-
 class ArgNotFound:
     """Returned when WhereArg cannot find the argument from self.args (sys.argv[1:])"""
 
     pass
+
+
+class ArgValue:
+    """Auto-set on self by RegisterArg for a present flag. Truthy like True (so
+    `if cli.output:` still works), but also carries .value so it can return whatever is there.
+    the flag in sys.argv, or None if the flag was passed bare / nothing followed it.
+    Usage: if cli.output: print(f"Output: {cli.output.value}")"""
+
+    def __init__(self, Value: str | None):
+        self.value = Value
+
+    def __bool__(self) -> bool:
+        return True
+
+    def __repr__(self) -> str:
+        return f"ArgValue({self.value!r})"
 
 
 class NotFoundInArgs:
@@ -143,22 +146,33 @@ class ArgHandle:
     --------------
     - IsArgInActualArgs(Arg: str), R: bool;True/False
     - ErrorArgPrint(text: str, Warn: bool=False, Exit: bool=True)
+    --------------
     - RegisterArg(Flags: list, StrictIndex: int=None, StrictIndex_ExitOnError: bool=False, HelpMsg: str=\"\")
         RegisterArg(...), R: Registered() OR NotRegistered() OR OverlimitKwargs() OR NoKwargs() OR StrictIndexBroken()
+        Also auto-sets an attribute on self (argparse style) named after Flags[0], ArgValue()/False.
+
+    - RegisterArgs(ArgDefs: list[dict]), R: list of whatever RegisterArg() returns per dict
+        Takes same arguments as RegisterArg but at a 'bulk-level', meaning you can register many arguments without calling RegisterArg many times.
+
     --------------
-    - HandleBasic()
+    - HandleBasic(), R: None
+    - Parse(Exit: bool=True), R: None
+        Combines HandleBasic and PrintOnNoArgs to reduce boilerplate.
+
     - WhereArg(Arg: str), R: ArgNotFound() OR int()
     - NextAfter(Arg: str), R: NotFoundInArgs() OR str()
 
     """
 
-    def __init__(self, ProgramName: str, Version: str):
+    def __init__(self, ProgramName: str, Version: str, NoArgsMsg: str | None = None):
+        # NoArgsMsg: Lets you skip PrintOnNoArgs at class initliazation.
         self.args = (
             sys.argv
         )  # 0: Script Name, 1: --help/-h OR --version/-v OR --AnyOtherArg
         self._CustomVersionMsg = False
         self._ProgramName = ProgramName
         self._Version = Version
+        self._NoArgsMsg = NoArgsMsg
         self._ArgsRegistered = {
             "Help": {
                 "Flags": ["--help", "-h"],
@@ -231,7 +245,6 @@ class ArgHandle:
         Flags: list,
         StrictIndex: int | None = None,
         StrictIndex_ExitOnError: bool | None = False,
-        VarIndex: int | None = None,
         **kwargs,
     ) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken]:
         """Register a argument so arghandle knows how to work with it.
@@ -244,6 +257,13 @@ class ArgHandle:
 
         kwargs:
             HelpMsg="Description shown in help"
+
+        Automatically sets an attribute on self (argparse style, via setattr) named after
+        Flags[0] stripped of leading dashes, e.g. ["--banner", "-b"] -> self.banner.
+        If the flag was present in sys.argv, the attribute is an ArgValue() (truthy, and
+        carries .value = whatever came right after the flag, or None if nothing did).
+        If the flag was NOT present, the attribute is plain False.
+        Use hasattr()/getattr() on the instance if you need to check this dynamically.
 
         Returns:
             Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken
@@ -267,28 +287,62 @@ class ArgHandle:
                 else:
                     return StrictIndexBroken()
 
-        if VarIndex is not None:
-            VarName = Flags[0].lstrip("-").replace("-", "_")
-            if 0 <= VarIndex < len(sys.argv):
-                setattr(self, VarName, sys.argv[VarIndex])
-            else:
-                setattr(self, VarName, NoVarIndex())
-            self._ArgsRegistered[VarName] = {
-                "Flags": Flags,
-                "HelpMsg": next(iter(kwargs.values())),
-                "VarIndex": VarIndex,
-            }
-
         _, HelpMsg = next(iter(kwargs.items()))
-        Name = Flags[0].lstrip("-")
+        Name = Flags[0].lstrip("-").replace("-", "_")
         self._ArgsRegistered[Name] = {"Flags": Flags, "HelpMsg": HelpMsg}
+
+        MatchedFlag = next((Flag for Flag in Flags if Flag in self.args), None)
+        if MatchedFlag is not None:
+            FlagIdx = self.args.index(MatchedFlag)
+            NextIdx = FlagIdx + 1
+            FollowingValue = self.args[NextIdx] if NextIdx < len(self.args) else None
+            setattr(self, Name, ArgValue(FollowingValue))
+        else:
+            setattr(self, Name, False)
+
         return Registered()
 
-    def HandleBasic(self, Exit=True):
-        # WHAT WAS FIXED IN THIS UPDATE: (UPDATE v2.2.2)
-        # Used self.args[1] in ("--version", "-v") # Its FirstArg but they both are the exact same...
-        # As well as ("--help", "-h")
+    def RegisterArgs(
+        self, ArgDefs: list
+    ) -> list[
+        Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken]
+    ]:
+        """Bulk-register multiple arguments in one call instead of one RegisterArg() call
+        per flag. Added v2.6.0 purely to cut boilerplate, internally this just loops and
+        calls RegisterArg() for each dict, so behavior/return-types per-arg are identical.
 
+        Usage:
+            cli.RegisterArgs([
+                {"Flags": ["--output", "-o"], "HelpMsg": "Output file"},
+                {"Flags": ["--banner", "-b"], "HelpMsg": "Runs banner"},
+            ])
+
+        Each dict's keys map directly to RegisterArg()'s params: "Flags" (required),
+        "StrictIndex", "StrictIndex_ExitOnError", and "HelpMsg" (goes through as the
+        HelpMsg kwarg).
+
+        Returns:
+            A list of whatever RegisterArg() returned for each dict, in the same order.
+        """
+        Results = []
+        for ArgDef in ArgDefs:
+            ArgDef = dict(ArgDef)
+            Flags = ArgDef.pop("Flags", [])
+            StrictIndex = ArgDef.pop("StrictIndex", None)
+            StrictIndex_ExitOnError = ArgDef.pop("StrictIndex_ExitOnError", False)
+            Results.append(
+                self.RegisterArg(
+                    Flags,
+                    StrictIndex=StrictIndex,
+                    StrictIndex_ExitOnError=StrictIndex_ExitOnError,
+                    **ArgDef,
+                )
+            )
+        return Results
+
+    def HandleBasic(self, Exit=True):
+        if len(self.args) <= 1:
+            return
         FirstArg = self.args[1]
 
         if FirstArg in ("--version", "-v"):
@@ -316,6 +370,12 @@ class ArgHandle:
             if Exit:
                 raise SystemExit
 
+    def Parse(self, Exit=True):
+        """Boilerplate reducing function to handle HandleBasic and PrintOnNoArgs. Recommend read the DOCS.md at https://github.com/alanbutidk/arghandle for more info."""
+        if self._NoArgsMsg is not None:
+            self.PrintOnNoArgs(self._NoArgsMsg)
+        self.HandleBasic(Exit=Exit)
+
     def WhereArg(self, Arg: str) -> Union[int, ArgNotFound]:
         for i in range(len(self.args)):
             if Arg in self.args[i]:
@@ -323,19 +383,6 @@ class ArgHandle:
         return ArgNotFound()
 
     def NextAfter(self, InitVar) -> Union[str, NotFoundInArgs]:
-        if isinstance(InitVar, (NoVarIndex, NotFoundInArgs)):
-            return NotFoundInArgs()
-
-        for Name, Info in self._ArgsRegistered.items():
-            if (
-                Info.get("VarIndex") is not None
-                and getattr(self, Name, None) == InitVar
-            ):
-                NextIdx = Info["VarIndex"] + 1
-                if NextIdx < len(sys.argv):
-                    return sys.argv[NextIdx]
-                return NotFoundInArgs()  # Comment when bugs appear
-
         if isinstance(InitVar, str) and InitVar in self.args:
             ArgIdx = self.args.index(InitVar)
             NextIdx = ArgIdx + 1
@@ -351,24 +398,24 @@ class ArgHandle:
 
 def Main() -> None:
     print("Here is 'arghandle' as ASCII Blocks :)")
-    print("""\033[36m █████	 ██████	  ██████  ██   ██  █████  ███	 ██ ██████	██		███████ 
-██	 ██ ██	 ██ ██		 ██	  ██ ██	  ██ ████	██ ██	██ ██	   ██	   
-███████ ██████	██	 ███ ███████ ███████ ██ ██	██ ██	██ ██	   █████   
-██	 ██ ██	 ██ ██	  ██ ██	  ██ ██	  ██ ██	 ██ ██ ██	██ ██	   ██	   
-██	 ██ ██	 ██	 ██████	 ██	  ██ ██	  ██ ██	  ████ ██████  ███████ ███████															 
+    print("""\033[36m █████  ██████   ██████  ██   ██  █████  ███    ██ ██████  ██      ███████ 
+██   ██ ██   ██ ██       ██   ██ ██   ██ ████   ██ ██   ██ ██      ██      
+███████ ██████  ██   ███ ███████ ███████ ██ ██  ██ ██   ██ ██      █████   
+██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██      
+██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████ 
 
-v2.2.2\033[0m					 """)
+v2.6.0\033[0m					 """)
 
 
 # End of text banner
 
 
 def Cli():
-    cli = ArgHandle("ArgHandle", "v2.2.2")
+    cli = ArgHandle("ArgHandle", "v2.6.0")
     cli.RegisterArg(["--banner", "-b"], HelpMsg="Runs the Main() function")
     cli.PrintOnNoArgs("No arguments given! Use --help/-h for usage.")
     cli.HandleBasic()
-    if cli.test:  # pyright: ignore
+    if cli.banner:  # pyright: ignore
         Main()
         raise SystemExit  # Again so we cant pass after this
     else:
