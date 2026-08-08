@@ -1,4 +1,4 @@
-# ArgHandle v2.2.3
+# ArgHandle v2.6.0
 
 A simple, lightweight alternative to `argparse`. No confusion, no boilerplate, just clean argument handling for your CLI tools.
 
