@@ -11,3 +11,6 @@ venv/
 env/
 .pypirc
 .ruff_cache/
+
+# Removed autobuild script as it was NOT for the user.
+.abuild

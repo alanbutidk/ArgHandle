@@ -18,7 +18,7 @@ cli = ArgHandle(\"Program\", \"v1.0.0\")
 cli.PrintOnNoArgs(\"No arguments supplied!\")
 cli.RegisterArg([\"-a1\", \"--arg1\"], HelpMsg=\"This is argument 1\")
 
-# Before HelpMsg, it can take StrictIndex=\[INT\] & StrictIndex_ExitOnError=\[True/False\]
+# Before HelpMsg, it can take StrictIndex=[INT] & StrictIndex_ExitOnError=[True/False]
 
 cli.HandleBasic()
 
@@ -32,18 +32,26 @@ else:
     cli.ErrorArgPrint(\"Unknown argument supplied! Use --help/-h for usage.\")
 
 For now, this is ArgHandle, read the docs at the github repository.
+
+
+-----
+
+WHAT WAS ADDED IN v2.2.2:
+
+- HandleBasic() fixed to check if [--help/-h] || [--version/-v] AT sys.argv[1], NOT IN sys.argv
+- Removed RegisterToHelp(), as it wasn't doing any logic!
+
 """
 
 # Imports:
 import sys
-from typing import Tuple, Union
+from typing import Union
 import warnings
 # import os
 # import re
 # import textwrap
 
-# Read tutorial at end of file.
-
+# Enable VT100 on Windows if detected platform is win32
 if sys.platform == "win32":
     import ctypes
 
@@ -58,6 +66,8 @@ if sys.platform == "win32":
 
 
 # Start of returnable classes.
+
+
 class NotRegistered:
     """Returned when the argument list is empty or invalid."""
 
@@ -117,8 +127,35 @@ class NotFoundInArgs:
 
 # Start of ArgHandle
 class ArgHandle:
+    """ArgHandle() is the main class of arghandle.
+    It has these functions:
+
+    R: Returns <TYPE>
+
+    - ProgramName(string: str), R: None
+    - Version(string: str), R: None
+    - CustomVersionMsg(string: str), R: None
+    - ArgCount(), R: int()
+    - PrintOnNoArgs(text: str, NoColor: bool=False, Warn: bool=False, Exit: bool=True), R: None
+    --------------
+    - SetVariableToIndex(VariableName: str, Index: int), R: str() OR IndexOutOfRange()
+    - IsArgMatch(Arg: str, Index: int), R: True/False
+    --------------
+    - IsArgInActualArgs(Arg: str), R: bool;True/False
+    - ErrorArgPrint(text: str, Warn: bool=False, Exit: bool=True)
+    - RegisterArg(Flags: list, StrictIndex: int=None, StrictIndex_ExitOnError: bool=False, HelpMsg: str=\"\")
+        RegisterArg(...), R: Registered() OR NotRegistered() OR OverlimitKwargs() OR NoKwargs() OR StrictIndexBroken()
+    --------------
+    - HandleBasic()
+    - WhereArg(Arg: str), R: ArgNotFound() OR int()
+    - NextAfter(Arg: str), R: NotFoundInArgs() OR str()
+
+    """
+
     def __init__(self, ProgramName: str, Version: str):
-        self.args = sys.argv
+        self.args = (
+            sys.argv
+        )  # 0: Script Name, 1: --help/-h OR --version/-v OR --AnyOtherArg
         self._CustomVersionMsg = False
         self._ProgramName = ProgramName
         self._Version = Version
@@ -247,14 +284,14 @@ class ArgHandle:
         self._ArgsRegistered[Name] = {"Flags": Flags, "HelpMsg": HelpMsg}
         return Registered()
 
-    def RegisterToHelp(self, *Args, **Kwargs):
-        warnings.warn(
-            "RegisterToHelp is now deprecated, use ArgHandle().RegisterArg() instead [CHANGED FROM v1.1.0]",
-            category=DeprecationWarning,
-        )
-
     def HandleBasic(self, Exit=True):
-        if any(Flag == Arg for Arg in self.args for Flag in ["--version", "-v"]):
+        # WHAT WAS FIXED IN THIS UPDATE: (UPDATE v2.2.2)
+        # Used self.args[1] in ("--version", "-v") # Its FirstArg but they both are the exact same...
+        # As well as ("--help", "-h")
+
+        FirstArg = self.args[1]
+
+        if FirstArg in ("--version", "-v"):
             if not self._CustomVersionMsg:
                 print(
                     f"\033[36m{self._ProgramName}\033[0m \033[33m{self._Version}\033[0m"
@@ -263,21 +300,21 @@ class ArgHandle:
                 print(f"{self._CustomVersionMsg}")
 
             if Exit:
-                raise SystemExit()
-        if any(Flag == Arg for Arg in self.args for Flag in ["--help", "-h"]):
+                raise SystemExit
+        if FirstArg in ("--help", "-h"):
             CalledArg = next(
                 (Arg for Arg in self.args if Arg in ["--help", "-h"]), self.args[0]
             )
 
             print(f"{self._ProgramName} {self._Version} {CalledArg} called:")
 
-            for Name, Info in self._ArgsRegistered.items():
+            for _, Info in self._ArgsRegistered.items():
                 Flags = ", ".join(Info["Flags"])
                 Msg = Info["HelpMsg"]
                 print(f"\033[36m  [{Flags}]\033[0m: \033[33m{Msg}\033[0m")
 
             if Exit:
-                raise SystemExit()
+                raise SystemExit
 
     def WhereArg(self, Arg: str) -> Union[int, ArgNotFound]:
         for i in range(len(self.args)):
@@ -288,6 +325,7 @@ class ArgHandle:
     def NextAfter(self, InitVar) -> Union[str, NotFoundInArgs]:
         if isinstance(InitVar, (NoVarIndex, NotFoundInArgs)):
             return NotFoundInArgs()
+
         for Name, Info in self._ArgsRegistered.items():
             if (
                 Info.get("VarIndex") is not None
@@ -296,39 +334,41 @@ class ArgHandle:
                 NextIdx = Info["VarIndex"] + 1
                 if NextIdx < len(sys.argv):
                     return sys.argv[NextIdx]
-                return NotFoundInArgs()
+                return NotFoundInArgs()  # Comment when bugs appear
+
         if isinstance(InitVar, str) and InitVar in self.args:
             ArgIdx = self.args.index(InitVar)
             NextIdx = ArgIdx + 1
             if NextIdx < len(self.args):
                 return self.args[NextIdx]
             return NotFoundInArgs()
+
         return NotFoundInArgs()
 
 
 # End of ArgHandle class
 
 
-def Main():
-    print("This test is to showcase ArgHandle, and the logic behind this is simple.")
+def Main() -> None:
+    print("Here is 'arghandle' as ASCII Blocks :)")
     print("""\033[36m █████	 ██████	  ██████  ██   ██  █████  ███	 ██ ██████	██		███████ 
 ██	 ██ ██	 ██ ██		 ██	  ██ ██	  ██ ████	██ ██	██ ██	   ██	   
 ███████ ██████	██	 ███ ███████ ███████ ██ ██	██ ██	██ ██	   █████   
 ██	 ██ ██	 ██ ██	  ██ ██	  ██ ██	  ██ ██	 ██ ██ ██	██ ██	   ██	   
 ██	 ██ ██	 ██	 ██████	 ██	  ██ ██	  ██ ██	  ████ ██████  ███████ ███████															 
 
-v2.2.0\033[0m					 """)
+v2.2.2\033[0m					 """)
 
 
 # End of text banner
 
 
 def Cli():
-    cli = ArgHandle("ArgHandle", "v2.2.0")
-    cli.RegisterArg(["--test", "-t"], HelpMsg="Runs the Main() function")
+    cli = ArgHandle("ArgHandle", "v2.2.2")
+    cli.RegisterArg(["--banner", "-b"], HelpMsg="Runs the Main() function")
     cli.PrintOnNoArgs("No arguments given! Use --help/-h for usage.")
     cli.HandleBasic()
-    if cli.test:
+    if cli.test:  # pyright: ignore
         Main()
         raise SystemExit  # Again so we cant pass after this
     else:

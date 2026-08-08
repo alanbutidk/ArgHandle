@@ -1,4 +1,4 @@
-# ArgHandle v2.1.0
+# ArgHandle v2.2.2
 
 A simple, lightweight alternative to `argparse`. No confusion, no boilerplate, just clean argument handling for your CLI tools.
 
@@ -7,7 +7,7 @@ Built because `argparse` is overkill for most scripts. ArgHandle gives you exact
 ## Installation
 
 ```
-pip install arghandle==2.1.0
+pip install arghandle==2.2.2
 ```
 
 ## Quick Start
@@ -26,7 +26,7 @@ cli.RegisterArg(["--input", "-i"], VarIndex=2, HelpMsg="Input file")
 cli.PrintOnNoArgs("No arguments provided. Use --help or -h for usage.")
 cli.HandleBasic()
 
-if cli.IsArgInActualArgs("--input") or cli.IsArgInActualArgs("-i"):
+if cli.input:
     print(f"Input: {cli.input}")
 ```
 
