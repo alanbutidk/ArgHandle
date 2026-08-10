@@ -103,6 +103,10 @@ class ArgNotFound:
     pass
 
 
+class NoVarIndex:
+    """Returned when"""
+
+
 class ArgValue:
     """Auto-set on self by RegisterArg for a present flag. Truthy like True (so
     `if cli.output:` still works), but also carries .value so it can return whatever is there.
@@ -177,7 +181,11 @@ class ArgHandle:
             "Help": {
                 "Flags": ["--help", "-h"],
                 "HelpMsg": "Print this help message and exit.",
-            }
+            },
+            "Version": {
+                "Flags": ["--version", "-v"],
+                "HelpMsg": "Print version and exit.",
+            },
         }
 
     def ProgramName(self, String: str):
@@ -283,7 +291,7 @@ class ArgHandle:
             if not Matched and any(Flag in self.args for Flag in Flags):
                 if StrictIndex_ExitOnError:
                     FlagStr = ", ".join(Flags)
-                    raise SystemExit(f"[{FlagStr}] is not at index [{StrictIndex}]\n")
+                    raise SystemExit(f"'{FlagStr}' is not at index {StrictIndex}\n")
                 else:
                     return StrictIndexBroken()
 
