@@ -13,11 +13,20 @@ authors = [
   { name = "alanbutidk" }
 ]
 keywords = ["cli", "args", "arguments", "argparse"]
+
+license = "GPL-3.0-only"
+
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
 [project.scripts]
 
 arghandle = "arghandle.arghandle:Cli"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.exclude-package-data]
+"*" = [".gitignore", ".git", ".abuild", ".ruff_cache", "DOCS.md"]
+

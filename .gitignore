@@ -1,16 +1,16 @@
-dist/
-build/
-*.egg-info/
-*.build/
-*.dist/
-*.onefile-build/
-__pycache__/
+dist
+build
+*.egg-info
+*.build
+*.dist
+*.onefile-build
+__pycache__
 *.pyc
-venv/
-.env/
-env/
+venv
+.env
+env
 .pypirc
-.ruff_cache/
+.ruff_cache
 
 # Removed autobuild script as it was NOT for the user.
 .abuild
