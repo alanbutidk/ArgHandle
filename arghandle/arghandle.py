@@ -432,14 +432,14 @@ def Main() -> None:
 ██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██      
 ██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████ 
 
-v2.6.2\033[0m					 """)
+v2.7.0\033[0m					 """)
 
 
 # End of text banner
 
 
 def Cli():
-    cli = ArgHandle("ArgHandle", "v2.6.2")
+    cli = ArgHandle("ArgHandle", "v2.7.0")
     cli.RegisterArg(["--banner", "-b"], HelpMsg="Runs the Main() function")
     cli.PrintOnNoArgs("No arguments given! Use --help/-h for usage.")
     cli.HandleBasic()
