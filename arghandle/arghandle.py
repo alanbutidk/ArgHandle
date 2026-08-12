@@ -349,7 +349,7 @@ class ArgHandle:
         return Results
 
     def HandleBasic(self, Exit=True):
-        if len(self.args) <= 1:
+        if len(self.args) < 2:
             return
         FirstArg = self.args[1]
 

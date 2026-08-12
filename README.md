@@ -7,7 +7,7 @@ Built because `argparse` is overkill for most scripts. ArgHandle gives you exact
 ## Installation
 
 ```
-pip install arghandle==2.6.1
+pip install arghandle==2.6.2
 ```
 
 ## Quick Start
