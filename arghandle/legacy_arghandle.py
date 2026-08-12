@@ -105,8 +105,8 @@ class Legacy:
     def RegisterArg(
         self,
         Flags: list,
-        StrictIndex: int = None,
-        StrictIndex_ExitOnError: bool = False,
+        StrictIndex: int | None = None,
+        StrictIndex_ExitOnError: bool | None = False,
         **kwargs,
     ) -> Union[Registered, NotRegistered, NoKwargs, OverlimitKwargs, StrictIndexBroken]:
         """Registers an argument to the help screen and optionally enforces a strict index.
@@ -154,7 +154,7 @@ class Legacy:
         if not any(arg in self.args for arg in ["--help", "-h"]):
             return
         print(f"{self._ProgramName} --help/-h called:")
-        for Name, Info in self._ArgsRegistered.items():
+        for _, Info in self._ArgsRegistered.items():
             Flags = ", ".join(Info["Flags"])
             Msg = Info["HelpMsg"]
             print(f"  [{Flags}]: {Msg}")

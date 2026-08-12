@@ -172,11 +172,13 @@ class ArgHandle:
         # NoArgsMsg: Lets you skip PrintOnNoArgs at class initliazation.
         self.args = (
             sys.argv
-        )  # 0: Script Name, 1: --help/-h OR --version/-v OR --AnyOtherArg
+        )  # 1: Script Name, 2: --help/-h OR --version/-v OR --AnyOtherArg
+
         self._CustomVersionMsg = False
         self._ProgramName = ProgramName
         self._Version = Version
         self._NoArgsMsg = NoArgsMsg
+        self._CustomHelpMsg = False
         self._ArgsRegistered = {
             "Help": {
                 "Flags": ["--help", "-h"],
@@ -194,11 +196,20 @@ class ArgHandle:
     def Version(self, String: str):
         self._Version = String
 
-    def CustomVersionMsg(self, Msg: str):
+    def CustomVersionMsg(self, Msg: str, color: bool = False):
+        if color:
+            self._CustomVersionMsg = f"\033[36m{Msg}\033[0m"
+            return
         self._CustomVersionMsg = Msg
 
     def ArgCount(self) -> int:
         return len(sys.argv)
+
+    def CustomHelpMsg(self, Msg: str, color: bool = False):
+        if color:
+            self._CustomHelpMsg = f"\033[36m{Msg}\033[0m"
+            return
+        self._CustomHelpMsg = Msg
 
     def PrintOnNoArgs(
         self, String: str, NoColor: bool = False, Warn: bool = False, Exit: bool = True
@@ -297,7 +308,9 @@ class ArgHandle:
 
         _, HelpMsg = next(iter(kwargs.items()))
         Name = Flags[0].lstrip("-").replace("-", "_")
-        self._ArgsRegistered[Name] = {"Flags": Flags, "HelpMsg": HelpMsg}
+
+        if not self._CustomHelpMsg:
+            self._ArgsRegistered[Name] = {"Flags": Flags, "HelpMsg": HelpMsg}
 
         MatchedFlag = next((Flag for Flag in Flags if Flag in self.args), None)
         if MatchedFlag is not None:
@@ -364,17 +377,19 @@ class ArgHandle:
             if Exit:
                 raise SystemExit
         if FirstArg in ("--help", "-h"):
-            CalledArg = next(
-                (Arg for Arg in self.args if Arg in ["--help", "-h"]), self.args[0]
-            )
+            if not self._CustomHelpMsg:
+                CalledArg = next(
+                    (Arg for Arg in self.args if Arg in ["--help", "-h"]), self.args[0]
+                )
 
-            print(f"{self._ProgramName} {self._Version} {CalledArg} called:")
+                print(f"{self._ProgramName} {self._Version} {CalledArg} called:")
 
-            for _, Info in self._ArgsRegistered.items():
-                Flags = ", ".join(Info["Flags"])
-                Msg = Info["HelpMsg"]
-                print(f"\033[36m  [{Flags}]\033[0m: \033[33m{Msg}\033[0m")
-
+                for _, Info in self._ArgsRegistered.items():
+                    Flags = ", ".join(Info["Flags"])
+                    Msg = Info["HelpMsg"]
+                    print(f"\033[36m  [{Flags}]\033[0m: \033[33m{Msg}\033[0m")
+            else:
+                print(f"{self._CustomHelpMsg}")
             if Exit:
                 raise SystemExit
 
@@ -400,6 +415,11 @@ class ArgHandle:
 
         return NotFoundInArgs()
 
+    def __repr__(self):
+        return (
+            f"ArgHandle(ProgramName={self._ProgramName!r}, Version={self._Version!r})"
+        )
+
 
 # End of ArgHandle class
 
@@ -412,14 +432,14 @@ def Main() -> None:
 ██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██      
 ██   ██ ██   ██  ██████  ██   ██ ██   ██ ██   ████ ██████  ███████ ███████ 
 
-v2.6.1\033[0m					 """)
+v2.6.2\033[0m					 """)
 
 
 # End of text banner
 
 
 def Cli():
-    cli = ArgHandle("ArgHandle", "v2.6.1")
+    cli = ArgHandle("ArgHandle", "v2.6.2")
     cli.RegisterArg(["--banner", "-b"], HelpMsg="Runs the Main() function")
     cli.PrintOnNoArgs("No arguments given! Use --help/-h for usage.")
     cli.HandleBasic()
