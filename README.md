@@ -21,7 +21,7 @@ cli = ArgHandle("YourProgramName", "v0.0.0") # Replace v0.0.0 with program versi
 # cli.CustomVersionMsg("mytool, custom message") <- Overrides the --version/-v output entirely
 
 cli.RegisterArg(["--output", "-o"], StrictIndex=1, StrictIndex_ExitOnError=True, HelpMsg="Output file")
-cli.RegisterArg(["--input", "-i"], VarIndex=2, HelpMsg="Input file")
+cli.RegisterArg(["--input", "-i"], HelpMsg="Input file")
 
 cli.PrintOnNoArgs("No arguments provided. Use --help or -h for usage.")
 cli.HandleBasic()
