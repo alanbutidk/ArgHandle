@@ -7,13 +7,11 @@ name = "arghandle"
 version = "2.6.2"
 description = "A simple, clean alternative to argparse"
 readme = "README.md"
-license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [
   { name = "alanbutidk" }
 ]
 keywords = ["cli", "args", "arguments", "argparse"]
-
 license = "GPL-3.0-only"
 
 classifiers = [
